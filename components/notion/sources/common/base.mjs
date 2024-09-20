@@ -63,8 +63,11 @@ export default {
     setLastCreatedTimestamp(ts) {
       this.db.set(constants.timestamps.CREATED_TIME, ts);
     },
-    getLastUpdatedTimestamp() {
-      return this.db.get(constants.timestamps.LAST_EDITED_TIME) ?? this.daysAgo(7);
+    getLastUpdatedTimestamp(ts) {
+      const lastEditedTime = this.db.get(constants.timestamps.LAST_EDITED_TIME) ?? this.daysAgo(7);
+      return ts
+        ? Math.max(lastEditedTime, Date.parse(ts))
+        : lastEditedTime;
     },
     setLastUpdatedTimestamp(ts) {
       this.db.set(constants.timestamps.LAST_EDITED_TIME, ts);
@@ -74,6 +77,17 @@ export default {
     },
     lastUpdatedSortParam(params = {}) {
       return lastSortParam(constants.timestamps.LAST_EDITED_TIME, params);
+    },
+    lastEditedTimeFilterParam(ts) {
+      const date = new Date(ts);
+      return {
+        filter: {
+          timestamp: "last_edited_time",
+          last_edited_time: {
+            on_or_after: date.toISOString(),
+          },
+        },
+      };
     },
   },
 };

@@ -8,7 +8,7 @@ export default {
   key: "notion-updated-page",
   name: "Updated Page in Database", /* eslint-disable-line pipedream/source-name */
   description: "Emit new event when a page in a database is updated. To select a specific page, use `Updated Page ID` instead",
-  version: "0.0.16",
+  version: "0.0.20",
   type: "source",
   dedupe: "unique",
   props: {
@@ -36,6 +36,12 @@ export default {
       label: "Include New Pages",
       description: "Emit events when pages are created or updated. Set to `true` to include newly created pages. Set to `false` to only emit updated pages. Defaults to `false`.",
       default: false,
+    },
+    lastEditedTimestamp: {
+      type: "string",
+      label: "Emit after (ISO 8601)",
+      description: "An optional datetime (e.g. `2023-11-29:15:30:00`) to filter the initial events. Useful to limit the first execution when the database has many pages. Defaults to 7 days before today.",
+      optional: true,
     },
   },
   hooks: {
@@ -79,11 +85,12 @@ export default {
     },
   },
   async run() {
-    const lastCheckedTimestamp = this.getLastUpdatedTimestamp();
+    const lastCheckedTimestamp = this.getLastUpdatedTimestamp(this.lastEditedTimestamp);
     const propertyValues = this._getPropertyValues();
 
     const params = {
       ...this.lastUpdatedSortParam(),
+      ...this.lastEditedTimeFilterParam(lastCheckedTimestamp),
     };
     let newLastUpdatedTimestamp = lastCheckedTimestamp;
     const properties = await this.getProperties();
